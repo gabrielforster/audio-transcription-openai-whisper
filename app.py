@@ -21,7 +21,7 @@ def health_check():
 
 
 def process_audio_from_url(audio_url: str) -> str:
-    audio_response = requests.get(audio_url)
+    audio_response = requests.get(audio_url, stream=True)
     if audio_response.status_code != 200:
         return JSONResponse(content={"error": "failed to download audio"}, status_code=400)
 
@@ -35,7 +35,9 @@ def process_audio_from_url(audio_url: str) -> str:
     now = time.time()
     audio_file_path = f"/tmp/audio_{now}.{audio_extension}"
     with open(audio_file_path, "wb") as audio_file:
-        audio_file.write(audio_response.content)
+        for chunk in audio_response.iter_content(chunk_size=128):
+            if chunk:
+                audio_file.write(chunk)
 
     audio_file_out_path = f"/tmp/slow_audio_{now}.{audio_extension}"
     slow_audio(audio_file_path, audio_file_out_path, speed_factor=0.8)
